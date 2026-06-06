@@ -52,6 +52,13 @@ def find_main_video(dir_path: Path) -> Path | None:
     return best[1] if best else None
 
 
+def _ensure_ext(new_name: str, original: Path) -> str:
+    """Add original extension to new_name if it has none."""
+    if not Path(new_name).suffix and original.suffix:
+        return new_name + original.suffix
+    return new_name
+
+
 def rename_path(old: str, new_name: str) -> str:
     old_p = Path(old)
     # If old_p is a directory, rename the main video file inside it
@@ -59,10 +66,10 @@ def rename_path(old: str, new_name: str) -> str:
         video = find_main_video(old_p)
         if video is None:
             raise OSError(f"No video file found in {old_p}")
-        new_p = old_p / new_name
+        new_p = old_p / _ensure_ext(new_name, video)
         os.rename(video, new_p)
         return str(new_p)
-    new_p = old_p.parent / new_name
+    new_p = old_p.parent / _ensure_ext(new_name, old_p)
     os.rename(old_p, new_p)
     return str(new_p)
 

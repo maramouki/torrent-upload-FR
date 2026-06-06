@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models import UploadHistory
+from app.services.file_service import find_main_video
 from app.schemas import (
     PreviewRequest,
     PreviewResponse,
@@ -191,10 +192,13 @@ async def upload_start(
             detail=f"Cannot start upload: status is '{row.status}', expected 'renamed'",
         )
 
+    p = Path(row.path)
     if row.final_name:
-        p = Path(row.path)
-        # If path is a dir, new file lives inside that dir
         final_path = str(p / row.final_name) if p.is_dir() else str(p.parent / row.final_name)
+    elif p.is_dir():
+        # No rename: find the main video file to pass directly to upload-c411
+        video = find_main_video(p)
+        final_path = str(video) if video else str(p)
     else:
         final_path = row.path
     background_tasks.add_task(_run_upload, req.job_id, final_path, row.tag or "")
