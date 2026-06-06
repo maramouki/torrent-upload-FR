@@ -69,11 +69,12 @@ function stepStatus(current: string, step: string) {
 export function UploadPage() {
   const { step, selectedPath, selectedName, tag, provenance, setStep, setJobId, reset } = useUploadStore()
 
-  useEffect(() => {
-    if (step === 'preview' && !useUploadStore.getState().jobId) {
+  function goToPreview() {
+    if (!useUploadStore.getState().jobId) {
       setJobId(crypto.randomUUID())
     }
-  }, [step])
+    setStep('preview')
+  }
 
   return (
     <div style={s.page}>
@@ -114,7 +115,7 @@ export function UploadPage() {
             </div>
           )}
           <TagInput />
-          <button style={s.nextBtn} onClick={() => setStep('preview')}>
+          <button style={s.nextBtn} onClick={goToPreview}>
             Continuer →
           </button>
         </div>

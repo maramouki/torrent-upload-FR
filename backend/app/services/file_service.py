@@ -5,8 +5,12 @@ from pathlib import Path
 
 
 def detect_tag(filename: str) -> str | None:
-    stem = Path(filename).stem
-    m = re.search(r"-([A-Z0-9]{3,10})$", stem, re.IGNORECASE)
+    # Use the last path component (works for both files and folders)
+    name = Path(filename).name
+    # Remove extension if it's a file
+    stem = Path(name).stem if '.' in name and not name.startswith('.') else name
+    # Match -TAG or .TAG at the end (3-12 uppercase alphanumeric chars)
+    m = re.search(r"[-.]([A-Z0-9]{3,12})$", stem, re.IGNORECASE)
     return m.group(1).upper() if m else None
 
 
