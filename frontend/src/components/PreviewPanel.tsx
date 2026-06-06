@@ -197,8 +197,8 @@ export function PreviewPanel() {
       </div>
 
       {running && !debugMode && <Loader />}
-      {running && debugMode && logs.length > 0 && <LogViewer logs={logs} />}
       {running && debugMode && logs.length === 0 && <Loader />}
+      {debugMode && logs.length > 0 && <LogViewer logs={logs} />}
 
       {previewDone && c411ProposedName && (
         <div style={s.nameBox}>
