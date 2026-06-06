@@ -115,11 +115,18 @@ async def get_poster(name: str, db: Session = Depends(get_db)):
     title = _extract_title(name)
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
+            # movie search first (more precise), fallback to multi for series/anime
             r = await client.get(
-                "https://api.themoviedb.org/3/search/multi",
+                "https://api.themoviedb.org/3/search/movie",
                 params={"api_key": tmdb_key, "query": title, "language": "fr"},
             )
-        results = r.json().get("results", [])
+            results = r.json().get("results", [])
+            if not results:
+                r = await client.get(
+                    "https://api.themoviedb.org/3/search/multi",
+                    params={"api_key": tmdb_key, "query": title, "language": "fr"},
+                )
+                results = r.json().get("results", [])
         poster_path = results[0].get("poster_path") if results else None
         url = f"https://image.tmdb.org/t/p/w300{poster_path}" if poster_path else None
     except Exception:
