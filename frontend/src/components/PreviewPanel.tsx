@@ -97,7 +97,16 @@ export function PreviewPanel() {
     setPreviewDone(true)
     if (jobId) {
       const res = await getPreviewResult(jobId)
-      if (res.data.c411_name) setC411Name(res.data.c411_name)
+      if (res.data.c411_name) {
+        setC411Name(res.data.c411_name)
+        // Auto-skip rename if proposed name matches current name (ignoring extension)
+        const currentStem = selectedName?.replace(/\.[^.]+$/, '') ?? ''
+        const proposedStem = res.data.c411_name.replace(/\.[^.]+$/, '')
+        if (currentStem && proposedStem && currentStem === proposedStem) {
+          await skipRename(jobId)
+          setRenamed(true)
+        }
+      }
     }
   })
 
