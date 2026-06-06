@@ -62,7 +62,6 @@ export function ConfirmUpload() {
     }
     setDone(true)
     setUploadDone(true)
-    setStep('done')
   })
 
   async function handleUpload() {
@@ -109,7 +108,11 @@ export function ConfirmUpload() {
 
       {logs.length > 0 && <LogViewer logs={logs} />}
 
-      {done && <div style={s.success}>✓ Upload terminé avec succès !</div>}
+      {done && (
+        <button style={{ ...s.btn, background: '#16a34a' }} onClick={() => setStep('done')}>
+          ✓ Upload terminé avec succès !
+        </button>
+      )}
       {uploadError && (
         <div style={{ color: '#f87171', fontWeight: 600, fontSize: 14 }}>
           ✗ Erreur lors de l'upload — consulte les logs ci-dessus pour le détail.
