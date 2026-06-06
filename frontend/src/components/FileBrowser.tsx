@@ -27,6 +27,7 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 4,
     cursor: 'pointer',
     fontSize: 12,
+    whiteSpace: 'nowrap' as const,
   },
   back: {
     padding: '6px 12px',
@@ -43,10 +44,13 @@ const s: Record<string, React.CSSProperties> = {
 
 export function FileBrowser() {
   const { setSelectedPath, setTag, setProvenance, setStep } = useUploadStore()
-  const [currentPath, setCurrentPath] = useState<string | undefined>(undefined)
+  // Stack of paths: empty = root, last item = current path
+  const [stack, setStack] = useState<string[]>([])
   const [entries, setEntries] = useState<BrowseEntry[]>([])
   const [hoveredPath, setHoveredPath] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const currentPath = stack.length > 0 ? stack[stack.length - 1] : undefined
 
   useEffect(() => {
     load(currentPath)
@@ -64,15 +68,22 @@ export function FileBrowser() {
     }
   }
 
+  function navigateInto(path: string) {
+    setStack((prev) => [...prev, path])
+  }
+
+  function navigateBack() {
+    setStack((prev) => prev.slice(0, -1))
+  }
+
   async function handleSelect(entry: BrowseEntry) {
     setSelectedPath(entry.path, entry.name)
 
-    // For directories: scan inside to find the main video file for tag detection
     let tagPath = entry.path
     if (entry.is_dir) {
       try {
         const scan = await scanDir(entry.path)
-        if (scan.data.video_name) tagPath = scan.data.video_path!
+        if (scan.data.video_path) tagPath = scan.data.video_path
       } catch { /* ignore */ }
     }
 
@@ -91,13 +102,13 @@ export function FileBrowser() {
 
   return (
     <div style={s.root}>
-      {currentPath && (
-        <button style={s.back} onClick={() => setCurrentPath(undefined)}>
-          ← Retour aux dossiers racines
+      {stack.length > 0 && (
+        <button style={s.back} onClick={navigateBack}>
+          ← Retour
         </button>
       )}
       <div style={s.breadcrumb}>
-        {currentPath ? `📂 ${currentPath}` : 'Cliquez sur un dossier pour le parcourir'}
+        {currentPath ? `📂 ${currentPath}` : 'Choisissez un dossier média'}
       </div>
       {loading && <div style={{ color: '#64748b', fontSize: 13 }}>Chargement…</div>}
       <div style={s.list}>
@@ -110,7 +121,7 @@ export function FileBrowser() {
             }}
             onMouseEnter={() => setHoveredPath(e.path)}
             onMouseLeave={() => setHoveredPath(null)}
-            onClick={() => e.is_dir && setCurrentPath(e.path)}
+            onClick={() => e.is_dir && navigateInto(e.path)}
           >
             <span style={s.icon}>{e.is_dir ? '📁' : '🎬'}</span>
             <span style={s.name}>{e.name}</span>

@@ -115,7 +115,10 @@ export function UploadPage() {
 
       {step === 'tag' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Tag de groupe</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('browse')}>← Retour</button>
+            <div style={s.sectionTitle}>Tag de groupe</div>
+          </div>
           {selectedPath && (
             <div style={s.meta}>
               <span>📄 {selectedName}</span>
@@ -131,14 +134,20 @@ export function UploadPage() {
 
       {step === 'preview' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Prévisualisation</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('tag')}>← Retour</button>
+            <div style={s.sectionTitle}>Prévisualisation</div>
+          </div>
           <PreviewPanel />
         </div>
       )}
 
       {step === 'confirm' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Confirmation de l'upload</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('preview')}>← Retour</button>
+            <div style={s.sectionTitle}>Confirmation de l'upload</div>
+          </div>
           <ConfirmUpload />
         </div>
       )}
