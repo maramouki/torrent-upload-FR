@@ -13,7 +13,7 @@ export function useWebSocket(jobId: string | null, onDone?: () => void) {
       if (msg.type === 'log' && msg.text !== undefined) {
         appendLog(msg.text)
       }
-      if (msg.type === 'done') {
+      if (msg.type === 'done' || msg.type === 'timeout') {
         onDone?.()
       }
     }

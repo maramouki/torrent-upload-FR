@@ -56,6 +56,7 @@ export function PreviewPanel() {
   const [running, setRunning] = useState(false)
   const [previewDone, setPreviewDone] = useState(false)
   const [renamed, setRenamed] = useState(false)
+  const [checking, setChecking] = useState(false)
 
   useWebSocket(jobId, async () => {
     setRunning(false)
@@ -97,6 +98,21 @@ export function PreviewPanel() {
     setRenamed(true)
   }
 
+  async function handleCheckResult() {
+    if (!jobId) return
+    setChecking(true)
+    try {
+      const res = await getPreviewResult(jobId)
+      if (res.data.c411_name) setC411Name(res.data.c411_name)
+      if (res.data.status === 'preview' || res.data.status === 'renamed') {
+        setRunning(false)
+        setPreviewDone(true)
+      }
+    } finally {
+      setChecking(false)
+    }
+  }
+
   async function handleSkipRename() {
     if (!jobId) return
     await skipRename(jobId)
@@ -121,13 +137,24 @@ export function PreviewPanel() {
         </div>
       )}
 
-      <button
-        style={{ ...s.btn, ...(running ? s.btnDisabled : {}) }}
-        onClick={handleStart}
-        disabled={running}
-      >
-        {running ? 'Prévisualisation en cours…' : 'Lancer la prévisualisation'}
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+        <button
+          style={{ ...s.btn, ...(running ? s.btnDisabled : {}) }}
+          onClick={handleStart}
+          disabled={running}
+        >
+          {running ? 'Prévisualisation en cours…' : 'Lancer la prévisualisation'}
+        </button>
+        {running && (
+          <button
+            style={{ ...s.btn, background: '#475569', ...(checking ? s.btnDisabled : {}) }}
+            onClick={handleCheckResult}
+            disabled={checking}
+          >
+            {checking ? 'Vérification…' : 'Vérifier le résultat'}
+          </button>
+        )}
+      </div>
 
       {logs.length > 0 && <LogViewer logs={logs} />}
 
