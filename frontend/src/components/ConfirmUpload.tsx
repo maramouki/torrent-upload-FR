@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { startUpload } from '../api/client'
+import { startUpload, getPreviewResult } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { LogViewer } from './LogViewer'
@@ -49,9 +49,17 @@ export function ConfirmUpload() {
 
   const [uploading, setUploading] = useState(false)
   const [done, setDone] = useState(false)
+  const [uploadError, setUploadError] = useState(false)
 
-  useWebSocket(uploading ? jobId : null, () => {
+  useWebSocket(uploading ? jobId : null, async () => {
     setUploading(false)
+    if (jobId) {
+      const res = await getPreviewResult(jobId)
+      if (res.data.status === 'error') {
+        setUploadError(true)
+        return
+      }
+    }
     setDone(true)
     setUploadDone(true)
     setStep('done')
@@ -101,7 +109,12 @@ export function ConfirmUpload() {
 
       {logs.length > 0 && <LogViewer logs={logs} />}
 
-      {done && <div style={s.success}>✓ Upload terminé !</div>}
+      {done && <div style={s.success}>✓ Upload terminé avec succès !</div>}
+      {uploadError && (
+        <div style={{ color: '#f87171', fontWeight: 600, fontSize: 14 }}>
+          ✗ Erreur lors de l'upload — consulte les logs ci-dessus pour le détail.
+        </div>
+      )}
     </div>
   )
 }
