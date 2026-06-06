@@ -2,11 +2,19 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.config import settings
 from app.schemas import BrowseEntry, BrowseResponse
 
 router = APIRouter()
+
+_VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".m2ts", ".ts", ".mov", ".wmv"}
+
+
+class ScanDirResult(BaseModel):
+    video_name: str | None = None
+    video_path: str | None = None
 
 
 def _allowed(path: Path) -> bool:
@@ -48,3 +56,23 @@ def browse(path: str | None = None):
             )
         )
     return BrowseResponse(entries=entries)
+
+
+@router.get("/browse/scan-dir", response_model=ScanDirResult)
+def scan_dir(path: str):
+    target = Path(path)
+    if not _allowed(target):
+        raise HTTPException(status_code=403, detail="Path outside allowed roots")
+    if not target.is_dir():
+        raise HTTPException(status_code=400, detail="Not a directory")
+
+    best: tuple[int, Path] | None = None
+    for entry in target.iterdir():
+        if entry.is_file() and entry.suffix.lower() in _VIDEO_EXTS:
+            size = entry.stat().st_size
+            if best is None or size > best[0]:
+                best = (size, entry)
+
+    if best:
+        return ScanDirResult(video_name=best[1].name, video_path=str(best[1]))
+    return ScanDirResult()

@@ -43,3 +43,6 @@ export const renameFile = (job_id: string, new_name: string) =>
 
 export const startUpload = (job_id: string) =>
   api.post('/upload/start', { job_id, confirmed: true })
+
+export const scanDir = (path: string) =>
+  api.get<{ video_name: string | null; video_path: string | null }>('/browse/scan-dir', { params: { path } })

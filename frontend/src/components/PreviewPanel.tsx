@@ -77,11 +77,16 @@ export function PreviewPanel() {
     ])
   }
 
+  function makeUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+  }
+
   async function handleStart() {
-    if (!jobId) {
-      const id = crypto.randomUUID()
-      setJobId(id)
-    }
+    if (!jobId) setJobId(makeUUID())
     handlePreview()
   }
 
@@ -95,7 +100,7 @@ export function PreviewPanel() {
   if (!jobId) {
     return (
       <div style={s.section}>
-        <button style={s.btn} onClick={() => { const id = crypto.randomUUID(); setJobId(id); }}>
+        <button style={s.btn} onClick={() => setJobId(makeUUID())}>
           Générer un job ID
         </button>
       </div>

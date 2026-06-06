@@ -41,9 +41,10 @@ async def _run_preview(job_id: str, path: str, tag: str, db_path: str):
     upload_cli = get_config_value("upload_cli", db_tmp)
     db_tmp.close()
 
-    cmd = [upload_cli, "--debug", path]
+    cli_parts = upload_cli.split()
+    cmd = cli_parts + ["--debug", path]
     if tag:
-        cmd = [upload_cli, "--debug", "-tag", tag, path]
+        cmd = cli_parts + ["--debug", "-tag", tag, path]
 
     lines: list[str] = []
     queue = get_or_create_queue(job_id)
@@ -82,7 +83,7 @@ async def _run_upload(job_id: str, final_path: str, tag: str):
     upload_cli = get_config_value("upload_cli", db_tmp)
     db_tmp.close()
 
-    cmd = [upload_cli, final_path]
+    cmd = upload_cli.split() + [final_path]
     db = SessionLocal()
     try:
         row = db.query(UploadHistory).filter(UploadHistory.job_id == job_id).first()

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { browseDir, detectTag, getProvenance, type BrowseEntry } from '../api/client'
+import { browseDir, detectTag, getProvenance, scanDir, type BrowseEntry } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 
 const s: Record<string, React.CSSProperties> = {
@@ -67,8 +67,17 @@ export function FileBrowser() {
   async function handleSelect(entry: BrowseEntry) {
     setSelectedPath(entry.path, entry.name)
 
+    // For directories: scan inside to find the main video file for tag detection
+    let tagPath = entry.path
+    if (entry.is_dir) {
+      try {
+        const scan = await scanDir(entry.path)
+        if (scan.data.video_name) tagPath = scan.data.video_path!
+      } catch { /* ignore */ }
+    }
+
     const [tagRes, provRes] = await Promise.allSettled([
-      detectTag(entry.path),
+      detectTag(tagPath),
       getProvenance(entry.path),
     ])
     if (tagRes.status === 'fulfilled' && tagRes.value.data.tag) {
