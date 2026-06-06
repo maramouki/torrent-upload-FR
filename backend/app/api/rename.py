@@ -7,9 +7,17 @@ from app.config import settings
 from app.database import get_db
 from app.models import UploadHistory
 from app.schemas import RenameRequest, RenameResponse
-from app.services.file_service import clear_tmp_cache, rename_path
+from app.services.file_service import clear_tmp_cache, find_main_video, rename_path
 
 router = APIRouter()
+
+
+def _cache_stem(path: str) -> str:
+    p = Path(path)
+    if p.is_dir():
+        video = find_main_video(p)
+        return video.stem if video else p.stem
+    return p.stem
 
 
 @router.post("/rename/skip")
@@ -20,8 +28,7 @@ def rename_skip(req: RenameRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
     if row.status not in ("preview", "renamed"):
         raise HTTPException(status_code=400, detail=f"Cannot skip rename in status '{row.status}'")
-    stem = Path(row.path).stem
-    clear_tmp_cache(stem, settings.tmp_cache_root)
+    clear_tmp_cache(_cache_stem(row.path), settings.tmp_cache_root)
     row.final_name = None
     row.status = "renamed"
     db.commit()
@@ -43,8 +50,7 @@ def rename_file(req: RenameRequest, db: Session = Depends(get_db)):
     except OSError as e:
         raise HTTPException(status_code=500, detail=f"Rename failed: {e}")
 
-    stem = Path(row.path).stem
-    clear_tmp_cache(stem, settings.tmp_cache_root)
+    clear_tmp_cache(_cache_stem(row.path), settings.tmp_cache_root)
 
     row.final_name = req.new_name
     row.status = "renamed"

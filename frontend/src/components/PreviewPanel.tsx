@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { startPreview, checkDuplicate, getPreviewResult, renameFile, skipRename } from '../api/client'
+import { api } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
+import { LogViewer } from './LogViewer'
 
 const s: Record<string, React.CSSProperties> = {
   section: { display: 'flex', flexDirection: 'column', gap: 12 },
@@ -72,7 +74,7 @@ function Loader() {
 
 export function PreviewPanel() {
   const {
-    selectedPath, selectedName, tag, jobId, c411ProposedName,
+    selectedPath, selectedName, tag, jobId, c411ProposedName, logs,
     setJobId, setC411Name, setDuplicateCheck, duplicateCheck,
     setStep, setRenamedPath, clearLogs,
   } = useUploadStore()
@@ -81,6 +83,14 @@ export function PreviewPanel() {
   const [previewDone, setPreviewDone] = useState(false)
   const [renamed, setRenamed] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [debugMode, setDebugMode] = useState(false)
+
+  useEffect(() => {
+    api.get<{ entries: { key: string; value: string }[] }>('/config').then((r) => {
+      const entry = r.data.entries.find((e) => e.key === 'debug_upload')
+      setDebugMode(entry?.value === 'true')
+    }).catch(() => {})
+  }, [])
 
   useWebSocket(jobId, async () => {
     setRunning(false)
@@ -186,7 +196,9 @@ export function PreviewPanel() {
         )}
       </div>
 
-      {running && <Loader />}
+      {running && !debugMode && <Loader />}
+      {running && debugMode && logs.length > 0 && <LogViewer logs={logs} />}
+      {running && debugMode && logs.length === 0 && <Loader />}
 
       {previewDone && c411ProposedName && (
         <div style={s.nameBox}>

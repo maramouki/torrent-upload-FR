@@ -191,6 +191,11 @@ async def upload_start(
             detail=f"Cannot start upload: status is '{row.status}', expected 'renamed'",
         )
 
-    final_path = str(Path(row.path).parent / row.final_name) if row.final_name else row.path
+    if row.final_name:
+        p = Path(row.path)
+        # If path is a dir, new file lives inside that dir
+        final_path = str(p / row.final_name) if p.is_dir() else str(p.parent / row.final_name)
+    else:
+        final_path = row.path
     background_tasks.add_task(_run_upload, req.job_id, final_path, row.tag or "")
     return {"job_id": req.job_id, "status": "uploading"}

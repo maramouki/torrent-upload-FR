@@ -39,8 +39,29 @@ def clear_tmp_cache(stem: str, tmp_root: str):
     shutil.rmtree(target, ignore_errors=True)
 
 
+_VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".m2ts", ".ts", ".mov", ".wmv"}
+
+
+def find_main_video(dir_path: Path) -> Path | None:
+    best: tuple[int, Path] | None = None
+    for entry in dir_path.iterdir():
+        if entry.is_file() and entry.suffix.lower() in _VIDEO_EXTS:
+            size = entry.stat().st_size
+            if best is None or size > best[0]:
+                best = (size, entry)
+    return best[1] if best else None
+
+
 def rename_path(old: str, new_name: str) -> str:
     old_p = Path(old)
+    # If old_p is a directory, rename the main video file inside it
+    if old_p.is_dir():
+        video = find_main_video(old_p)
+        if video is None:
+            raise OSError(f"No video file found in {old_p}")
+        new_p = old_p / new_name
+        os.rename(video, new_p)
+        return str(new_p)
     new_p = old_p.parent / new_name
     os.rename(old_p, new_p)
     return str(new_p)
