@@ -44,6 +44,7 @@ const s: Record<string, React.CSSProperties> = {
     background: '#1e293b',
     border: '2px solid transparent',
     transition: 'border-color 0.15s',
+    outline: 'none',
   },
   cardHover: { borderColor: '#3b82f6' },
   posterImg: {
@@ -217,15 +218,7 @@ export function FileBrowser() {
                 <PosterCard
                   key={e.path}
                   entry={e}
-                  onSelect={(entry) => {
-                    // If clicking a dir at content level, either navigate deeper or select
-                    // Navigate deeper if not yet at content level (stack.length < 2)
-                    if (stack.length < 2) {
-                      setStack((prev) => [...prev, entry.path])
-                    } else {
-                      handleSelect(entry)
-                    }
-                  }}
+                  onSelect={handleSelect}
                 />
               ))}
             </div>

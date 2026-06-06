@@ -27,10 +27,19 @@ def _extract_title(folder_name: str) -> str:
 
 
 def _read_tmdb_key_from_ua() -> str:
-    for path in [
+    candidates = [
         "/upload-assistant/data/Config/config.py",
         "/upload-assistant/config.py",
-    ]:
+        "/upload-assistant/data/config.py",
+    ]
+    # Also scan any config.py found under /upload-assistant
+    try:
+        for p in Path("/upload-assistant").rglob("config.py"):
+            candidates.append(str(p))
+    except Exception:
+        pass
+
+    for path in candidates:
         try:
             content = Path(path).read_text()
             m = re.search(r'tmdb_api\s*=\s*["\']([^"\']{10,})["\']', content)
