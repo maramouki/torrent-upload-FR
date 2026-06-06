@@ -7,7 +7,7 @@ services:
       - /mnt/drive_perso/Upload-Assistant-FR:/upload-assistant:ro
       - ./data:/app/data
     ports:
-      - "8000:8000"
+      - "8001:8000"
     restart: unless-stopped
 
   frontend:
