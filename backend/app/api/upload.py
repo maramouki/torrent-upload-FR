@@ -35,13 +35,17 @@ def _strip_ansi(text: str) -> str:
 def _extract_c411_name(lines: list[str]) -> str | None:
     clean_lines = [_strip_ansi(l) for l in lines]
 
-    # Priority 1: "C411 applies a naming change for this release:" → next non-empty line
+    # Priority 1: "C411 applies a naming change for this release:" → collect continuation lines
     for i, line in enumerate(clean_lines):
         if "c411 applies a naming change" in line.lower():
-            for j in range(i + 1, min(i + 4, len(clean_lines))):
-                candidate = clean_lines[j].strip()
-                if candidate:
-                    return candidate
+            parts: list[str] = []
+            for j in range(i + 1, min(i + 6, len(clean_lines))):
+                chunk = clean_lines[j].strip()
+                if not chunk or chunk.startswith("Check if") or chunk.startswith("["):
+                    break
+                parts.append(chunk)
+            if parts:
+                return "".join(parts)
             break
 
     # Priority 2: "Name:" line in the Database Info block (not inside JSON/dicts)
