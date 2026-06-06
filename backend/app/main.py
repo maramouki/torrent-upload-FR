@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
-from app.api import browse, tags, upload, rename, duplicate_check, provenance, ws
+from app.api import browse, tags, upload, rename, duplicate_check, provenance, ws, config_api
 
 
 @asynccontextmanager
@@ -28,4 +28,5 @@ app.include_router(upload.router, prefix="/api")
 app.include_router(rename.router, prefix="/api")
 app.include_router(duplicate_check.router, prefix="/api")
 app.include_router(provenance.router, prefix="/api")
+app.include_router(config_api.router, prefix="/api")
 app.include_router(ws.router)

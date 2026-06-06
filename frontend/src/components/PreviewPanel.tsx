@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { startPreview, checkDuplicate, getPreviewResult, renameFile } from '../api/client'
+import { startPreview, checkDuplicate, getPreviewResult, renameFile, skipRename } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { LogViewer } from './LogViewer'
@@ -56,6 +56,7 @@ export function PreviewPanel() {
   const [running, setRunning] = useState(false)
   const [previewDone, setPreviewDone] = useState(false)
   const [renamed, setRenamed] = useState(false)
+  const [checking, setChecking] = useState(false)
 
   useWebSocket(jobId, async () => {
     setRunning(false)
@@ -77,11 +78,16 @@ export function PreviewPanel() {
     ])
   }
 
+  function makeUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+  }
+
   async function handleStart() {
-    if (!jobId) {
-      const id = crypto.randomUUID()
-      setJobId(id)
-    }
+    if (!jobId) setJobId(makeUUID())
     handlePreview()
   }
 
@@ -92,10 +98,31 @@ export function PreviewPanel() {
     setRenamed(true)
   }
 
+  async function handleCheckResult() {
+    if (!jobId) return
+    setChecking(true)
+    try {
+      const res = await getPreviewResult(jobId)
+      if (res.data.c411_name) setC411Name(res.data.c411_name)
+      if (res.data.status === 'preview' || res.data.status === 'renamed') {
+        setRunning(false)
+        setPreviewDone(true)
+      }
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function handleSkipRename() {
+    if (!jobId) return
+    await skipRename(jobId)
+    setRenamed(true)
+  }
+
   if (!jobId) {
     return (
       <div style={s.section}>
-        <button style={s.btn} onClick={() => { const id = crypto.randomUUID(); setJobId(id); }}>
+        <button style={s.btn} onClick={() => setJobId(makeUUID())}>
           Générer un job ID
         </button>
       </div>
@@ -110,13 +137,24 @@ export function PreviewPanel() {
         </div>
       )}
 
-      <button
-        style={{ ...s.btn, ...(running ? s.btnDisabled : {}) }}
-        onClick={handleStart}
-        disabled={running}
-      >
-        {running ? 'Prévisualisation en cours…' : 'Lancer la prévisualisation'}
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+        <button
+          style={{ ...s.btn, ...(running ? s.btnDisabled : {}) }}
+          onClick={handleStart}
+          disabled={running}
+        >
+          {running ? 'Prévisualisation en cours…' : 'Lancer la prévisualisation'}
+        </button>
+        {running && (
+          <button
+            style={{ ...s.btn, background: '#475569', ...(checking ? s.btnDisabled : {}) }}
+            onClick={handleCheckResult}
+            disabled={checking}
+          >
+            {checking ? 'Vérification…' : 'Vérifier le résultat'}
+          </button>
+        )}
+      </div>
 
       {logs.length > 0 && <LogViewer logs={logs} />}
 
@@ -127,15 +165,34 @@ export function PreviewPanel() {
           <div style={s.label}>Nom proposé par C411</div>
           <div style={s.proposed}>{c411ProposedName}</div>
           {!renamed && (
-            <button style={s.applyBtn} onClick={handleRename}>
-              Appliquer le renommage + vider le cache
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' as const }}>
+              <button style={s.applyBtn} onClick={handleRename}>
+                Appliquer le renommage + vider le cache
+              </button>
+              <button
+                style={{ ...s.applyBtn, background: '#475569' }}
+                onClick={handleSkipRename}
+              >
+                Garder le nom actuel
+              </button>
+            </div>
           )}
           {renamed && (
             <div style={{ color: '#4ade80', marginTop: 8, fontSize: 13 }}>
-              ✓ Fichier renommé
+              ✓ Prêt pour l'upload
             </div>
           )}
+        </div>
+      )}
+
+      {previewDone && !c411ProposedName && !renamed && (
+        <div style={s.nameBox}>
+          <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 8 }}>
+            Aucun renommage proposé par C411
+          </div>
+          <button style={{ ...s.applyBtn, background: '#475569' }} onClick={handleSkipRename}>
+            Continuer sans renommer
+          </button>
         </div>
       )}
 

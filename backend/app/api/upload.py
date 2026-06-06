@@ -20,35 +20,72 @@ from app.api.tags import upsert_tag
 router = APIRouter()
 
 _C411_NAME_RE = re.compile(
-    r"(?:Torrent Name|Name|titre|Nom)\s*[:\-]\s*(.+)", re.IGNORECASE
+    r"(?<!\w)(?:Torrent Name|Name|titre|Nom)\s*[:\-]\s*(.+)", re.IGNORECASE
 )
+_C411_RENAME_RE = re.compile(
+    r"C411 applies a naming change for this release:\s*\n?\s*(.+)", re.IGNORECASE
+)
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mGKHF]|\x1b\][^\x07]*\x07|\x1b[()][AB012]|\x1b[=>]|\x07|\x08|\x0f|\x0e")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text).strip()
 
 
 def _extract_c411_name(lines: list[str]) -> str | None:
-    for line in reversed(lines):
-        m = _C411_NAME_RE.search(line)
-        if m:
-            return m.group(1).strip()
+    clean_lines = [_strip_ansi(l) for l in lines]
+
+    # Priority 1: "C411 applies a naming change for this release:" → collect continuation lines
+    for i, line in enumerate(clean_lines):
+        if "c411 applies a naming change" in line.lower():
+            parts: list[str] = []
+            for j in range(i + 1, min(i + 6, len(clean_lines))):
+                chunk = clean_lines[j].strip()
+                if not chunk or chunk.startswith("Check if") or chunk.startswith("["):
+                    break
+                parts.append(chunk)
+            if parts:
+                return "".join(parts)
+            break
+
+    # Priority 2: "Name:" line in the Database Info block (not inside JSON/dicts)
+    for line in clean_lines:
+        stripped = line.strip()
+        if re.match(r"^Name\s*:\s*\S", stripped, re.IGNORECASE):
+            return stripped.split(":", 1)[1].strip()
+
     return None
 
 
 async def _run_preview(job_id: str, path: str, tag: str, db_path: str):
     from app.database import SessionLocal
     from app.models import UploadHistory
+    from app.api.config_api import get_config_value
 
-    cmd = [settings.upload_cli, "--debug", path]
+    db_tmp = SessionLocal()
+    upload_cli = get_config_value("upload_cli", db_tmp)
+    db_tmp.close()
+
+    cli_parts = upload_cli.split()
+    cmd = cli_parts + [path, "--debug"]
     if tag:
-        cmd = [settings.upload_cli, "--debug", "-tag", tag, path]
+        cmd = cli_parts + [path, "--debug", "--tag", tag]
 
     lines: list[str] = []
     queue = get_or_create_queue(job_id)
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
     assert proc.stdout is not None
+    # Auto-answer "y" to any interactive prompts (name confirmation, qbit offline, etc.)
+    if proc.stdin:
+        proc.stdin.write(b"y\ny\ny\ny\ny\n")
+        proc.stdin.close()
+
     async for raw in proc.stdout:
         line = raw.decode("utf-8", errors="replace").rstrip()
         lines.append(line)
@@ -71,8 +108,15 @@ async def _run_preview(job_id: str, path: str, tag: str, db_path: str):
 async def _run_upload(job_id: str, final_path: str, tag: str):
     from app.database import SessionLocal
     from app.models import UploadHistory
+    from app.api.config_api import get_config_value
 
-    cmd = [settings.upload_cli, final_path]
+    db_tmp = SessionLocal()
+    upload_cli = get_config_value("upload_cli", db_tmp)
+    debug_upload = get_config_value("debug_upload", db_tmp)
+    db_tmp.close()
+
+    base_cmd = upload_cli.split() + [final_path, "--tag", tag] if tag else upload_cli.split() + [final_path]
+    cmd = base_cmd + ["--debug"] if debug_upload == "true" else base_cmd
     db = SessionLocal()
     try:
         row = db.query(UploadHistory).filter(UploadHistory.job_id == job_id).first()

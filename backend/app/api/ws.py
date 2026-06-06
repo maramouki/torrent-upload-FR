@@ -14,7 +14,7 @@ async def log_stream(websocket: WebSocket, job_id: str):
     try:
         while True:
             try:
-                line = await asyncio.wait_for(queue.get(), timeout=120.0)
+                line = await asyncio.wait_for(queue.get(), timeout=600.0)
             except asyncio.TimeoutError:
                 await websocket.send_json({"type": "timeout"})
                 break

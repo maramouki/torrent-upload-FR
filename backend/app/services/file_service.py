@@ -4,10 +4,34 @@ import shutil
 from pathlib import Path
 
 
+_NON_TAG_TOKENS = {
+    # resolutions
+    "480P", "576P", "720P", "1080P", "1080I", "2160P", "4K", "UHD",
+    # sources
+    "BLURAY", "REMUX", "BDREMUX", "WEBDL", "WEBRIP", "HDTV", "HDRIP", "DVDRIP",
+    # codecs
+    "H264", "H265", "X264", "X265", "AVC", "HEVC", "AV1",
+    # audio
+    "DTS", "AAC", "AC3", "DD5", "ATMOS", "TRUEHD", "DDP", "EAC3",
+    # HDR
+    "HDR", "HDR10", "DOLBY", "VISION",
+    # editions
+    "REPACK", "PROPER", "EXTENDED", "THEATRICAL", "UNRATED", "DIRECTORS",
+    # misc
+    "NOTAG", "MULTI", "VOSTFR", "FRENCH", "TRUEFRENCH",
+}
+
+
 def detect_tag(filename: str) -> str | None:
-    stem = Path(filename).stem
-    m = re.search(r"-([A-Z0-9]{3,10})$", stem, re.IGNORECASE)
-    return m.group(1).upper() if m else None
+    name = Path(filename).name
+    stem = Path(name).stem if '.' in name and not name.startswith('.') else name
+    m = re.search(r"[-.]([A-Z0-9]{3,12})$", stem, re.IGNORECASE)
+    if not m:
+        return None
+    candidate = m.group(1).upper()
+    if candidate in _NON_TAG_TOKENS:
+        return None
+    return candidate
 
 
 def clear_tmp_cache(stem: str, tmp_root: str):

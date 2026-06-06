@@ -19,6 +19,13 @@ class UploadHistory(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
 
+class AppConfig(Base):
+    __tablename__ = "app_config"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[str] = mapped_column(String, nullable=False, default="")
+
+
 class TagSuggestion(Base):
     __tablename__ = "tag_suggestions"
 

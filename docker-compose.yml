@@ -4,15 +4,16 @@ services:
     env_file: .env
     volumes:
       - /mnt/media:/mnt/media
+      - /mnt/drive_perso/Upload-Assistant-FR:/upload-assistant
       - ./data:/app/data
     ports:
-      - "8000:8000"
+      - "8001:8000"
     restart: unless-stopped
 
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "3001:80"
     depends_on:
       - backend
     restart: unless-stopped

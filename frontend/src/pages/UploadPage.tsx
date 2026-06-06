@@ -5,7 +5,7 @@ import { TagInput } from '../components/TagInput'
 import { PreviewPanel } from '../components/PreviewPanel'
 import { ConfirmUpload } from '../components/ConfirmUpload'
 
-const STEPS = ['browse', 'tag', 'preview', 'confirm', 'done'] as const
+const STEPS = ['browse', 'tag', 'preview', 'confirm', 'uploading', 'done'] as const
 
 const s: Record<string, React.CSSProperties> = {
   page: { maxWidth: 800, margin: '0 auto', padding: '24px 16px' },
@@ -69,11 +69,20 @@ function stepStatus(current: string, step: string) {
 export function UploadPage() {
   const { step, selectedPath, selectedName, tag, provenance, setStep, setJobId, reset } = useUploadStore()
 
-  useEffect(() => {
-    if (step === 'preview' && !useUploadStore.getState().jobId) {
-      setJobId(crypto.randomUUID())
+  function makeUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+  }
+
+  function goToPreview() {
+    if (!useUploadStore.getState().jobId) {
+      setJobId(makeUUID())
     }
-  }, [step])
+    setStep('preview')
+  }
 
   return (
     <div style={s.page}>
@@ -106,7 +115,10 @@ export function UploadPage() {
 
       {step === 'tag' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Tag de groupe</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('browse')}>← Retour</button>
+            <div style={s.sectionTitle}>Tag de groupe</div>
+          </div>
           {selectedPath && (
             <div style={s.meta}>
               <span>📄 {selectedName}</span>
@@ -114,7 +126,7 @@ export function UploadPage() {
             </div>
           )}
           <TagInput />
-          <button style={s.nextBtn} onClick={() => setStep('preview')}>
+          <button style={s.nextBtn} onClick={goToPreview}>
             Continuer →
           </button>
         </div>
@@ -122,14 +134,20 @@ export function UploadPage() {
 
       {step === 'preview' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Prévisualisation</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('tag')}>← Retour</button>
+            <div style={s.sectionTitle}>Prévisualisation</div>
+          </div>
           <PreviewPanel />
         </div>
       )}
 
       {step === 'confirm' && (
         <div style={s.section}>
-          <div style={s.sectionTitle}>Confirmation de l'upload</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <button style={s.resetBtn} onClick={() => setStep('preview')}>← Retour</button>
+            <div style={s.sectionTitle}>Confirmation de l'upload</div>
+          </div>
           <ConfirmUpload />
         </div>
       )}
