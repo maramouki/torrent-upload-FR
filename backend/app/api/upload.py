@@ -112,9 +112,11 @@ async def _run_upload(job_id: str, final_path: str, tag: str):
 
     db_tmp = SessionLocal()
     upload_cli = get_config_value("upload_cli", db_tmp)
+    debug_upload = get_config_value("debug_upload", db_tmp)
     db_tmp.close()
 
-    cmd = upload_cli.split() + [final_path, "--tag", tag] if tag else upload_cli.split() + [final_path]
+    base_cmd = upload_cli.split() + [final_path, "--tag", tag] if tag else upload_cli.split() + [final_path]
+    cmd = base_cmd + ["--debug"] if debug_upload == "true" else base_cmd
     db = SessionLocal()
     try:
         row = db.query(UploadHistory).filter(UploadHistory.job_id == job_id).first()

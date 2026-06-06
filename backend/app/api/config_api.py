@@ -13,6 +13,7 @@ EDITABLE_KEYS = [
     "media_roots",
     "upload_cli",
     "tmp_cache_root",
+    "debug_upload",
     "c411_api_base",
     "c411_api_key",
     "qbittorrent_url",
@@ -24,6 +25,7 @@ LABELS: dict[str, str] = {
     "media_roots": "Dossiers médias (séparés par virgule)",
     "upload_cli": "Commande upload-c411",
     "tmp_cache_root": "Dossier cache tmp",
+    "debug_upload": "Mode debug upload (true = ne publie pas sur C411)",
     "c411_api_base": "URL API C411",
     "c411_api_key": "Clé API C411 (Bearer token)",
     "qbittorrent_url": "URL qBittorrent WebUI",
@@ -34,7 +36,14 @@ LABELS: dict[str, str] = {
 SECRET_KEYS = {"c411_api_key", "qbittorrent_password"}
 
 
+_HARDCODED_DEFAULTS: dict[str, str] = {
+    "debug_upload": "true",
+}
+
+
 def _default(key: str) -> str:
+    if key in _HARDCODED_DEFAULTS:
+        return _HARDCODED_DEFAULTS[key]
     v = getattr(settings, key, "")
     if isinstance(v, list):
         return ",".join(v)
