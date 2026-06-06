@@ -99,9 +99,10 @@ export function PreviewPanel() {
       const res = await getPreviewResult(jobId)
       if (res.data.c411_name) {
         setC411Name(res.data.c411_name)
-        // Auto-skip rename if proposed name matches current name (ignoring extension)
-        const currentStem = selectedName?.replace(/\.[^.]+$/, '') ?? ''
-        const proposedStem = res.data.c411_name.replace(/\.[^.]+$/, '')
+        // Auto-skip rename if proposed name matches current name (ignoring video extension)
+        const VIDEO_EXTS = /\.(mkv|mp4|avi|m2ts|ts|mov|wmv)$/i
+        const currentStem = selectedName?.replace(VIDEO_EXTS, '') ?? ''
+        const proposedStem = res.data.c411_name.replace(VIDEO_EXTS, '')
         if (currentStem && proposedStem && currentStem === proposedStem) {
           await skipRename(jobId)
           setRenamed(true)
