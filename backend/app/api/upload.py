@@ -43,6 +43,8 @@ async def _run_preview(job_id: str, path: str, tag: str, db_path: str):
 
     cli_parts = upload_cli.split()
     cmd = cli_parts + ["--debug", path]
+    if tag:
+        cmd = cli_parts + ["--debug", "--tag", tag, path]
 
     lines: list[str] = []
     queue = get_or_create_queue(job_id)
