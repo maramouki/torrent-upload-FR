@@ -84,10 +84,12 @@ export function FileBrowser() {
     <div style={s.root}>
       {currentPath && (
         <button style={s.back} onClick={() => setCurrentPath(undefined)}>
-          ← Racine
+          ← Retour aux dossiers racines
         </button>
       )}
-      <div style={s.breadcrumb}>{currentPath ?? 'Dossiers racines'}</div>
+      <div style={s.breadcrumb}>
+        {currentPath ? `📂 ${currentPath}` : 'Cliquez sur un dossier pour le parcourir'}
+      </div>
       {loading && <div style={{ color: '#64748b', fontSize: 13 }}>Chargement…</div>}
       <div style={s.list}>
         {entries.map((e) => (
@@ -108,7 +110,7 @@ export function FileBrowser() {
                 Sélectionner
               </button>
             )}
-            {e.is_dir && (
+            {e.is_dir && currentPath && (
               <button style={s.selectBtn} onClick={(ev) => { ev.stopPropagation(); handleSelect(e) }}>
                 Choisir ce dossier
               </button>
