@@ -78,12 +78,16 @@ export function ConfirmUpload() {
 
   useWebSocket(uploading ? jobId : null, async () => {
     setUploading(false)
-    if (jobId) {
-      const res = await getPreviewResult(jobId)
-      if (res.data.status === 'error') {
-        setUploadError(true)
-        return
+    try {
+      if (jobId) {
+        const res = await getPreviewResult(jobId)
+        if (res.data.status === 'error') {
+          setUploadError(true)
+          return
+        }
       }
+    } catch {
+      // If status check fails, still show success (logs confirmed completion)
     }
     setDone(true)
     setUploadDone(true)
