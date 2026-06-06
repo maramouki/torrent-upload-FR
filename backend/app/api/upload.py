@@ -20,7 +20,10 @@ from app.api.tags import upsert_tag
 router = APIRouter()
 
 _C411_NAME_RE = re.compile(
-    r"(?:Torrent Name|Name|titre|Nom)\s*[:\-]\s*(.+)", re.IGNORECASE
+    r"(?<!\w)(?:Torrent Name|Name|titre|Nom)\s*[:\-]\s*(.+)", re.IGNORECASE
+)
+_C411_RENAME_RE = re.compile(
+    r"C411 applies a naming change for this release:\s*\n?\s*(.+)", re.IGNORECASE
 )
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mGKHF]|\x1b\][^\x07]*\x07|\x1b[()][AB012]|\x1b[=>]|\x07|\x08|\x0f|\x0e")
 
@@ -30,11 +33,23 @@ def _strip_ansi(text: str) -> str:
 
 
 def _extract_c411_name(lines: list[str]) -> str | None:
-    for line in reversed(lines):
-        clean = _strip_ansi(line)
-        m = _C411_NAME_RE.search(clean)
-        if m:
-            return m.group(1).strip()
+    clean_lines = [_strip_ansi(l) for l in lines]
+
+    # Priority 1: "C411 applies a naming change for this release:" → next non-empty line
+    for i, line in enumerate(clean_lines):
+        if "c411 applies a naming change" in line.lower():
+            for j in range(i + 1, min(i + 4, len(clean_lines))):
+                candidate = clean_lines[j].strip()
+                if candidate:
+                    return candidate
+            break
+
+    # Priority 2: "Name:" line in the Database Info block (not inside JSON/dicts)
+    for line in clean_lines:
+        stripped = line.strip()
+        if re.match(r"^Name\s*:\s*\S", stripped, re.IGNORECASE):
+            return stripped.split(":", 1)[1].strip()
+
     return None
 
 
