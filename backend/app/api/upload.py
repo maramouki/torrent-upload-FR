@@ -22,11 +22,17 @@ router = APIRouter()
 _C411_NAME_RE = re.compile(
     r"(?:Torrent Name|Name|titre|Nom)\s*[:\-]\s*(.+)", re.IGNORECASE
 )
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[mGKHF]|\x1b\][^\x07]*\x07|\x1b[()][AB012]|\x1b[=>]|\x07|\x08|\x0f|\x0e")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text).strip()
 
 
 def _extract_c411_name(lines: list[str]) -> str | None:
     for line in reversed(lines):
-        m = _C411_NAME_RE.search(line)
+        clean = _strip_ansi(line)
+        m = _C411_NAME_RE.search(clean)
         if m:
             return m.group(1).strip()
     return None
@@ -51,10 +57,16 @@ async def _run_preview(job_id: str, path: str, tag: str, db_path: str):
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
     assert proc.stdout is not None
+    # Auto-answer "y" to any interactive prompts (name confirmation, qbit offline, etc.)
+    if proc.stdin:
+        proc.stdin.write(b"y\ny\ny\ny\ny\n")
+        proc.stdin.close()
+
     async for raw in proc.stdout:
         line = raw.decode("utf-8", errors="replace").rstrip()
         lines.append(line)

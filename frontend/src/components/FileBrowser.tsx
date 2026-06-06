@@ -77,15 +77,20 @@ export function FileBrowser() {
   }
 
   async function handleSelect(entry: BrowseEntry) {
-    setSelectedPath(entry.path, entry.name)
-
+    let displayName = entry.name
     let tagPath = entry.path
+
     if (entry.is_dir) {
       try {
         const scan = await scanDir(entry.path)
-        if (scan.data.video_path) tagPath = scan.data.video_path
+        if (scan.data.video_path) {
+          tagPath = scan.data.video_path
+          displayName = scan.data.video_name ?? entry.name
+        }
       } catch { /* ignore */ }
     }
+
+    setSelectedPath(entry.path, displayName)
 
     const [tagRes, provRes] = await Promise.allSettled([
       detectTag(tagPath),
