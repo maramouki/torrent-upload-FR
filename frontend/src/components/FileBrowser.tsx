@@ -110,7 +110,7 @@ export function FileBrowser() {
                 Sélectionner
               </button>
             )}
-            {e.is_dir && currentPath && (
+            {e.is_dir && (
               <button style={s.selectBtn} onClick={(ev) => { ev.stopPropagation(); handleSelect(e) }}>
                 Choisir ce dossier
               </button>
