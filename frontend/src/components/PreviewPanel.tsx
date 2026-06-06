@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { startPreview, checkDuplicate, getPreviewResult, renameFile } from '../api/client'
+import { startPreview, checkDuplicate, getPreviewResult, renameFile, skipRename } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { LogViewer } from './LogViewer'
@@ -97,6 +97,12 @@ export function PreviewPanel() {
     setRenamed(true)
   }
 
+  async function handleSkipRename() {
+    if (!jobId) return
+    await skipRename(jobId)
+    setRenamed(true)
+  }
+
   if (!jobId) {
     return (
       <div style={s.section}>
@@ -132,15 +138,34 @@ export function PreviewPanel() {
           <div style={s.label}>Nom proposé par C411</div>
           <div style={s.proposed}>{c411ProposedName}</div>
           {!renamed && (
-            <button style={s.applyBtn} onClick={handleRename}>
-              Appliquer le renommage + vider le cache
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' as const }}>
+              <button style={s.applyBtn} onClick={handleRename}>
+                Appliquer le renommage + vider le cache
+              </button>
+              <button
+                style={{ ...s.applyBtn, background: '#475569' }}
+                onClick={handleSkipRename}
+              >
+                Garder le nom actuel
+              </button>
+            </div>
           )}
           {renamed && (
             <div style={{ color: '#4ade80', marginTop: 8, fontSize: 13 }}>
-              ✓ Fichier renommé
+              ✓ Prêt pour l'upload
             </div>
           )}
+        </div>
+      )}
+
+      {previewDone && !c411ProposedName && !renamed && (
+        <div style={s.nameBox}>
+          <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 8 }}>
+            Aucun renommage proposé par C411
+          </div>
+          <button style={{ ...s.applyBtn, background: '#475569' }} onClick={handleSkipRename}>
+            Continuer sans renommer
+          </button>
         </div>
       )}
 

@@ -41,6 +41,9 @@ export const getProvenance = (path: string) =>
 export const renameFile = (job_id: string, new_name: string) =>
   api.post<{ new_path: string }>('/rename', { job_id, new_name })
 
+export const skipRename = (job_id: string) =>
+  api.post('/rename/skip', { job_id, new_name: '' })
+
 export const startUpload = (job_id: string) =>
   api.post('/upload/start', { job_id, confirmed: true })
 
