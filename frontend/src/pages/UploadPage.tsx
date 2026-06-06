@@ -1,14 +1,13 @@
-import { useEffect } from 'react'
 import { useUploadStore } from '../store/uploadStore'
 import { FileBrowser } from '../components/FileBrowser'
 import { TagInput } from '../components/TagInput'
 import { PreviewPanel } from '../components/PreviewPanel'
 import { ConfirmUpload } from '../components/ConfirmUpload'
 
-const STEPS = ['browse', 'tag', 'preview', 'confirm', 'uploading', 'done'] as const
+const STEPS = ['browse', 'preview', 'confirm', 'done'] as const
 
 const s: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 800, margin: '0 auto', padding: '24px 16px' },
+  page: { maxWidth: 860, margin: '0 auto', padding: '24px 16px' },
   header: { fontSize: 22, fontWeight: 700, marginBottom: 24, color: '#f1f5f9' },
   stepper: { display: 'flex', gap: 8, marginBottom: 24 },
   stepDot: {
@@ -29,16 +28,6 @@ const s: Record<string, React.CSSProperties> = {
   },
   sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#94a3b8' },
   meta: { fontSize: 12, color: '#475569', marginBottom: 16 },
-  nextBtn: {
-    padding: '10px 20px',
-    background: '#3b82f6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontSize: 14,
-    marginTop: 12,
-  },
   resetBtn: {
     padding: '8px 16px',
     background: '#334155',
@@ -48,14 +37,14 @@ const s: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: 13,
   },
+  divider: { borderTop: '1px solid #1e293b', margin: '16px 0' },
 }
 
 const STEP_LABELS: Record<string, string> = {
   browse: '1. Sélection',
-  tag: '2. Tag',
-  preview: '3. Prévisualisation',
-  confirm: '4. Confirmation',
-  done: '5. Terminé',
+  preview: '2. Tag & Prévisualisation',
+  confirm: '3. Confirmation',
+  done: '4. Terminé',
 }
 
 function stepStatus(current: string, step: string) {
@@ -67,30 +56,15 @@ function stepStatus(current: string, step: string) {
 }
 
 export function UploadPage() {
-  const { step, selectedPath, selectedName, tag, provenance, setStep, setJobId, reset } = useUploadStore()
-
-  function makeUUID() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
-    })
-  }
-
-  function goToPreview() {
-    if (!useUploadStore.getState().jobId) {
-      setJobId(makeUUID())
-    }
-    setStep('preview')
-  }
+  const { step, selectedPath, selectedName, provenance, setStep, reset } = useUploadStore()
 
   return (
     <div style={s.page}>
       <div style={s.header}>torrent-upload-FR</div>
 
       <div style={s.stepper}>
-        {STEPS.filter((st) => st !== 'uploading').map((st) => {
-          const status = stepStatus(step, st)
+        {STEPS.map((st) => {
+          const status = stepStatus(step === 'uploading' ? 'confirm' : step, st)
           return (
             <div
               key={st}
@@ -100,7 +74,7 @@ export function UploadPage() {
                 ...(status === 'done' ? s.stepDone : {}),
               }}
             >
-              {STEP_LABELS[st] ?? st}
+              {STEP_LABELS[st]}
             </div>
           )
         })}
@@ -113,11 +87,11 @@ export function UploadPage() {
         </div>
       )}
 
-      {step === 'tag' && (
+      {(step === 'preview' || step === 'tag') && (
         <div style={s.section}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <button style={s.resetBtn} onClick={() => setStep('browse')}>← Retour</button>
-            <div style={s.sectionTitle}>Tag de groupe</div>
+            <div style={s.sectionTitle}>Tag & Prévisualisation</div>
           </div>
           {selectedPath && (
             <div style={s.meta}>
@@ -126,23 +100,12 @@ export function UploadPage() {
             </div>
           )}
           <TagInput />
-          <button style={s.nextBtn} onClick={goToPreview}>
-            Continuer →
-          </button>
-        </div>
-      )}
-
-      {step === 'preview' && (
-        <div style={s.section}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <button style={s.resetBtn} onClick={() => setStep('tag')}>← Retour</button>
-            <div style={s.sectionTitle}>Prévisualisation</div>
-          </div>
+          <div style={s.divider} />
           <PreviewPanel />
         </div>
       )}
 
-      {step === 'confirm' && (
+      {(step === 'confirm' || step === 'uploading') && (
         <div style={s.section}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <button style={s.resetBtn} onClick={() => setStep('preview')}>← Retour</button>

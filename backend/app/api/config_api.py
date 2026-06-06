@@ -14,6 +14,7 @@ EDITABLE_KEYS = [
     "upload_cli",
     "tmp_cache_root",
     "debug_upload",
+    "tmdb_api_key",
     "c411_api_base",
     "c411_api_key",
     "qbittorrent_url",
@@ -26,6 +27,7 @@ LABELS: dict[str, str] = {
     "upload_cli": "Commande upload-c411",
     "tmp_cache_root": "Dossier cache tmp",
     "debug_upload": "Mode debug upload (true = ne publie pas sur C411)",
+    "tmdb_api_key": "Clé API TMDB (pour les covers)",
     "c411_api_base": "URL API C411",
     "c411_api_key": "Clé API C411 (Bearer token)",
     "qbittorrent_url": "URL qBittorrent WebUI",
@@ -33,7 +35,7 @@ LABELS: dict[str, str] = {
     "qbittorrent_password": "Mot de passe qBittorrent",
 }
 
-SECRET_KEYS = {"c411_api_key", "qbittorrent_password"}
+SECRET_KEYS = {"c411_api_key", "qbittorrent_password", "tmdb_api_key"}
 
 
 _HARDCODED_DEFAULTS: dict[str, str] = {

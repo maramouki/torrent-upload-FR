@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { startUpload, getPreviewResult } from '../api/client'
+import { api } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { LogViewer } from './LogViewer'
@@ -41,6 +42,22 @@ const s: Record<string, React.CSSProperties> = {
   success: { color: '#4ade80', fontWeight: 600, fontSize: 16 },
 }
 
+function Loader({ label }: { label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0' }}>
+      <div style={{
+        width: 20, height: 20, borderRadius: '50%',
+        border: '3px solid #334155',
+        borderTopColor: '#3b82f6',
+        animation: 'spin 0.8s linear infinite',
+        flexShrink: 0,
+      }} />
+      <span style={{ color: '#94a3b8', fontSize: 13 }}>{label}</span>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
 export function ConfirmUpload() {
   const {
     jobId, tag, selectedName, selectedPath, c411ProposedName, provenance, duplicateCheck,
@@ -50,6 +67,14 @@ export function ConfirmUpload() {
   const [uploading, setUploading] = useState(false)
   const [done, setDone] = useState(false)
   const [uploadError, setUploadError] = useState(false)
+  const [debugMode, setDebugMode] = useState(false)
+
+  useEffect(() => {
+    api.get<{ entries: { key: string; value: string }[] }>('/config').then((r) => {
+      const entry = r.data.entries.find((e) => e.key === 'debug_upload')
+      setDebugMode(entry?.value === 'true')
+    }).catch(() => {})
+  }, [])
 
   useWebSocket(uploading ? jobId : null, async () => {
     setUploading(false)
@@ -71,12 +96,7 @@ export function ConfirmUpload() {
     await startUpload(jobId)
   }
 
-  // Nom affiché : nom C411 si renommé, sinon nom original
-  const displayName = renamedPath
-    ? c411ProposedName ?? selectedName
-    : selectedName
-
-  // Chemin affiché : chemin renommé si dispo, sinon chemin original
+  const displayName = renamedPath ? c411ProposedName ?? selectedName : selectedName
   const displayPath = renamedPath ?? selectedPath
 
   return (
@@ -98,6 +118,11 @@ export function ConfirmUpload() {
           <span style={s.label}>Chemin</span>
           <span style={s.value}>{displayPath ?? '—'}</span>
         </div>
+        {debugMode && (
+          <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
+            ⚠ Mode debug activé — ne publiera pas sur C411
+          </div>
+        )}
       </div>
 
       {duplicateCheck?.duplicate && (
@@ -114,7 +139,11 @@ export function ConfirmUpload() {
         </button>
       )}
 
-      {logs.length > 0 && <LogViewer logs={logs} />}
+      {uploading && !debugMode && <Loader label="Upload en cours…" />}
+      {uploading && debugMode && logs.length > 0 && <LogViewer logs={logs} />}
+      {uploading && debugMode && logs.length === 0 && <Loader label="Démarrage…" />}
+
+      {!uploading && logs.length > 0 && debugMode && <LogViewer logs={logs} />}
 
       {done && (
         <button style={{ ...s.btn, background: '#16a34a' }} onClick={() => setStep('done')}>

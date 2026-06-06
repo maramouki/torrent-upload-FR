@@ -1,11 +1,44 @@
 import os
+import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database import get_db
 from app.schemas import BrowseEntry, BrowseResponse
+
+_poster_cache: dict[str, str | None] = {}
+
+_NON_TITLE_RE = re.compile(
+    r'[\.\s]*(19|20)\d{2}.*$'
+    r'|[\.\s]*(FRENCH|MULTI|VFF|VOSTFR|MULTi|4K|UHD|2160p|1080p|720p|REMUX|BLURAY|WEB[-.]?DL|WEBRIP|HDTV|BluRay).*$',
+    re.IGNORECASE,
+)
+
+
+def _extract_title(folder_name: str) -> str:
+    title = _NON_TITLE_RE.sub('', folder_name)
+    title = re.sub(r'[._]', ' ', title).strip()
+    return title or folder_name
+
+
+def _read_tmdb_key_from_ua() -> str:
+    for path in [
+        "/upload-assistant/data/Config/config.py",
+        "/upload-assistant/config.py",
+    ]:
+        try:
+            content = Path(path).read_text()
+            m = re.search(r'tmdb_api\s*=\s*["\']([^"\']{10,})["\']', content)
+            if m:
+                return m.group(1)
+        except Exception:
+            pass
+    return ""
 
 router = APIRouter()
 
@@ -56,6 +89,35 @@ def browse(path: str | None = None):
             )
         )
     return BrowseResponse(entries=entries)
+
+
+@router.get("/browse/poster")
+async def get_poster(name: str, db: Session = Depends(get_db)):
+    from app.api.config_api import get_config_value
+
+    if name in _poster_cache:
+        return {"poster_url": _poster_cache[name]}
+
+    tmdb_key = get_config_value("tmdb_api_key", db) or _read_tmdb_key_from_ua()
+    if not tmdb_key:
+        _poster_cache[name] = None
+        return {"poster_url": None}
+
+    title = _extract_title(name)
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(
+                "https://api.themoviedb.org/3/search/multi",
+                params={"api_key": tmdb_key, "query": title, "language": "fr"},
+            )
+        results = r.json().get("results", [])
+        poster_path = results[0].get("poster_path") if results else None
+        url = f"https://image.tmdb.org/t/p/w300{poster_path}" if poster_path else None
+    except Exception:
+        url = None
+
+    _poster_cache[name] = url
+    return {"poster_url": url}
 
 
 @router.get("/browse/scan-dir", response_model=ScanDirResult)

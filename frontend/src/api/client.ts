@@ -49,3 +49,6 @@ export const startUpload = (job_id: string) =>
 
 export const scanDir = (path: string) =>
   api.get<{ video_name: string | null; video_path: string | null }>('/browse/scan-dir', { params: { path } })
+
+export const getPoster = (name: string) =>
+  api.get<{ poster_url: string | null }>('/browse/poster', { params: { name } })
