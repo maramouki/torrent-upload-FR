@@ -17,7 +17,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Frontend accessible sur `http://leoserver` (port 80).
+Frontend accessible sur `http://leoserver:3000`.
+
+Les clés API (C411, qBittorrent, etc.) peuvent être configurées directement dans l'app via l'onglet **Paramètres** — elles sont stockées en base SQLite. Les valeurs `.env` servent de valeurs par défaut initiales uniquement.
 
 ## Dev local (sans Docker)
 
