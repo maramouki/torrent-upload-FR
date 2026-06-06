@@ -5,7 +5,7 @@ import { TagInput } from '../components/TagInput'
 import { PreviewPanel } from '../components/PreviewPanel'
 import { ConfirmUpload } from '../components/ConfirmUpload'
 
-const STEPS = ['browse', 'tag', 'preview', 'confirm', 'done'] as const
+const STEPS = ['browse', 'tag', 'preview', 'confirm', 'uploading', 'done'] as const
 
 const s: Record<string, React.CSSProperties> = {
   page: { maxWidth: 800, margin: '0 auto', padding: '24px 16px' },

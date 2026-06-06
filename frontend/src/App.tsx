@@ -18,7 +18,6 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 14,
   fontWeight: active ? 600 : 400,
   color: active ? '#60a5fa' : '#64748b',
-  borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
   background: 'none',
   border: 'none',
   borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
