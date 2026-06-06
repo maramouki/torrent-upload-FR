@@ -26,8 +26,7 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     cursor: 'pointer',
     background: '#1e293b',
-    border: '1px solid transparent',
-    transition: 'border-color 0.15s',
+    transition: 'box-shadow 0.15s',
   },
   // Grid view (content level)
   grid: {
@@ -42,11 +41,9 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 8,
     overflow: 'hidden',
     background: '#1e293b',
-    border: '2px solid transparent',
-    transition: 'border-color 0.15s',
-    outline: 'none',
+    transition: 'box-shadow 0.15s',
   },
-  cardHover: { borderColor: '#3b82f6' },
+  cardHover: { boxShadow: '0 0 0 2px #3b82f6' },
   posterImg: {
     width: '100%',
     aspectRatio: '2/3',
@@ -197,7 +194,7 @@ export function FileBrowser() {
           {entries.map((e) => (
             <div
               key={e.path}
-              style={{ ...s.entry, ...(hoveredPath === e.path ? { borderColor: '#3b82f6' } : {}) }}
+              style={{ ...s.entry, ...(hoveredPath === e.path ? { boxShadow: '0 0 0 1px #3b82f6' } : {}) }}
               onMouseEnter={() => setHoveredPath(e.path)}
               onMouseLeave={() => setHoveredPath(null)}
               onClick={() => e.is_dir && setStack((prev) => [...prev, e.path])}
@@ -228,7 +225,7 @@ export function FileBrowser() {
               {files.map((e) => (
                 <div
                   key={e.path}
-                  style={{ ...s.entry, ...(hoveredPath === e.path ? { borderColor: '#3b82f6' } : {}) }}
+                  style={{ ...s.entry, ...(hoveredPath === e.path ? { boxShadow: '0 0 0 1px #3b82f6' } : {}) }}
                   onMouseEnter={() => setHoveredPath(e.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onClick={() => handleSelect(e)}
