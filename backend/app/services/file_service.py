@@ -53,8 +53,10 @@ def find_main_video(dir_path: Path) -> Path | None:
 
 
 def _ensure_ext(new_name: str, original: Path) -> str:
-    """Add original extension to new_name if it has none."""
-    if not Path(new_name).suffix and original.suffix:
+    """Add original video extension to new_name if it doesn't already end with one."""
+    if original.suffix.lower() not in _VIDEO_EXTS:
+        return new_name
+    if not new_name.lower().endswith(tuple(_VIDEO_EXTS)):
         return new_name + original.suffix
     return new_name
 
