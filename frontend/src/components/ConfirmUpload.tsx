@@ -43,7 +43,7 @@ const s: Record<string, React.CSSProperties> = {
 
 export function ConfirmUpload() {
   const {
-    jobId, tag, c411ProposedName, provenance, duplicateCheck,
+    jobId, tag, selectedName, selectedPath, c411ProposedName, provenance, duplicateCheck,
     renamedPath, logs, setStep, clearLogs, setUploadDone,
   } = useUploadStore()
 
@@ -71,12 +71,20 @@ export function ConfirmUpload() {
     await startUpload(jobId)
   }
 
+  // Nom affiché : nom C411 si renommé, sinon nom original
+  const displayName = renamedPath
+    ? c411ProposedName ?? selectedName
+    : selectedName
+
+  // Chemin affiché : chemin renommé si dispo, sinon chemin original
+  const displayPath = renamedPath ?? selectedPath
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={s.card}>
         <div style={s.row}>
           <span style={s.label}>Nom final</span>
-          <span style={s.value}>{c411ProposedName ?? '—'}</span>
+          <span style={s.value}>{displayName ?? '—'}</span>
         </div>
         <div style={s.row}>
           <span style={s.label}>Tag</span>
@@ -87,8 +95,8 @@ export function ConfirmUpload() {
           <span style={s.value}>{provenance ?? 'Inconnue'}</span>
         </div>
         <div style={s.row}>
-          <span style={s.label}>Chemin renommé</span>
-          <span style={s.value}>{renamedPath ?? '—'}</span>
+          <span style={s.label}>Chemin</span>
+          <span style={s.value}>{displayPath ?? '—'}</span>
         </div>
       </div>
 
@@ -96,7 +104,7 @@ export function ConfirmUpload() {
         <div style={s.dupWarn}>⚠ Doublon détecté — confirmer quand même ?</div>
       )}
 
-      {!done && (
+      {!done && !uploadError && (
         <button
           style={{ ...s.btn, ...(uploading ? s.btnDisabled : {}) }}
           onClick={handleUpload}

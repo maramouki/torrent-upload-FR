@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { startPreview, checkDuplicate, getPreviewResult, renameFile, skipRename } from '../api/client'
 import { useUploadStore } from '../store/uploadStore'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { LogViewer } from './LogViewer'
 
 const s: Record<string, React.CSSProperties> = {
   section: { display: 'flex', flexDirection: 'column', gap: 12 },
@@ -44,12 +43,37 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
     marginTop: 8,
   },
+  tagBadge: {
+    display: 'inline-block',
+    background: '#1e3a5f',
+    border: '1px solid #3b82f6',
+    borderRadius: 4,
+    padding: '2px 8px',
+    fontSize: 12,
+    color: '#93c5fd',
+    fontFamily: 'monospace',
+  },
+}
+
+function Loader() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0' }}>
+      <div style={{
+        width: 20, height: 20, borderRadius: '50%',
+        border: '3px solid #334155',
+        borderTopColor: '#3b82f6',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <span style={{ color: '#94a3b8', fontSize: 13 }}>Prévisualisation en cours…</span>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
 }
 
 export function PreviewPanel() {
   const {
     selectedPath, selectedName, tag, jobId, c411ProposedName,
-    logs, setJobId, setC411Name, setDuplicateCheck, duplicateCheck,
+    setJobId, setC411Name, setDuplicateCheck, duplicateCheck,
     setStep, setRenamedPath, clearLogs,
   } = useUploadStore()
 
@@ -137,6 +161,12 @@ export function PreviewPanel() {
         </div>
       )}
 
+      {tag && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b' }}>
+          Tag : <span style={s.tagBadge}>{tag}</span>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
         <button
           style={{ ...s.btn, ...(running ? s.btnDisabled : {}) }}
@@ -156,7 +186,7 @@ export function PreviewPanel() {
         )}
       </div>
 
-      {logs.length > 0 && <LogViewer logs={logs} />}
+      {running && <Loader />}
 
       {previewDone && c411ProposedName && (
         <div style={s.nameBox}>

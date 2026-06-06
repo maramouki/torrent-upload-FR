@@ -70,6 +70,16 @@ export function SettingsPage() {
     setTimeout(() => setSaved((prev) => ({ ...prev, [key]: false })), 2000)
   }
 
+  const BOOLEAN_KEYS = new Set(['debug_upload'])
+
+  async function handleToggle(key: string) {
+    const next = values[key] === 'true' ? 'false' : 'true'
+    setValues((prev) => ({ ...prev, [key]: next }))
+    await api.put('/config', { key, value: next })
+    setSaved((prev) => ({ ...prev, [key]: true }))
+    setTimeout(() => setSaved((prev) => ({ ...prev, [key]: false })), 2000)
+  }
+
   return (
     <div style={s.page}>
       <div style={s.title}>Configuration</div>
@@ -77,20 +87,44 @@ export function SettingsPage() {
         {entries.map((e) => (
           <div key={e.key} style={s.field}>
             <div style={s.label}>{e.label}</div>
-            <div style={s.row}>
-              <input
-                style={s.input}
-                type={e.is_secret ? 'password' : 'text'}
-                value={values[e.key] ?? ''}
-                placeholder={e.is_secret ? '••••••••' : ''}
-                onChange={(ev) => setValues((prev) => ({ ...prev, [e.key]: ev.target.value }))}
-                onKeyDown={(ev) => ev.key === 'Enter' && handleSave(e.key)}
-              />
-              <button style={s.saveBtn} onClick={() => handleSave(e.key)}>
-                Sauvegarder
-              </button>
-              {saved[e.key] && <span style={s.savedBadge}>✓ Sauvegardé</span>}
-            </div>
+            {BOOLEAN_KEYS.has(e.key) ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  onClick={() => handleToggle(e.key)}
+                  style={{
+                    width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+                    background: values[e.key] === 'true' ? '#3b82f6' : '#334155',
+                    position: 'relative', transition: 'background 0.2s',
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 3, borderRadius: '50%',
+                    width: 18, height: 18, background: '#fff',
+                    left: values[e.key] === 'true' ? 23 : 3,
+                    transition: 'left 0.2s',
+                  }} />
+                </div>
+                <span style={{ fontSize: 13, color: values[e.key] === 'true' ? '#60a5fa' : '#64748b' }}>
+                  {values[e.key] === 'true' ? 'Activé (ne publie pas sur C411)' : 'Désactivé (upload réel)'}
+                </span>
+                {saved[e.key] && <span style={s.savedBadge}>✓ Sauvegardé</span>}
+              </div>
+            ) : (
+              <div style={s.row}>
+                <input
+                  style={s.input}
+                  type={e.is_secret ? 'password' : 'text'}
+                  value={values[e.key] ?? ''}
+                  placeholder={e.is_secret ? '••••••••' : ''}
+                  onChange={(ev) => setValues((prev) => ({ ...prev, [e.key]: ev.target.value }))}
+                  onKeyDown={(ev) => ev.key === 'Enter' && handleSave(e.key)}
+                />
+                <button style={s.saveBtn} onClick={() => handleSave(e.key)}>
+                  Sauvegarder
+                </button>
+                {saved[e.key] && <span style={s.savedBadge}>✓ Sauvegardé</span>}
+              </div>
+            )}
           </div>
         ))}
       </div>
